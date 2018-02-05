@@ -5,7 +5,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 
 
-@XmlRootElement
+@XmlRootElement(name="User")
 public class User {
 	private String name;
 	private int id;

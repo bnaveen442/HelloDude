@@ -1,51 +1,64 @@
 package com.techouts.test;
 
-import javax.ws.rs.core.Response;
+import java.util.List;
 
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.techouts.pojo.User;
 import com.techouts.service.UserService;
 import com.techouts.service.impl.DefaultUserService;
-
-@Controller
-
+@RestController
 public class UserResource{
+
+
 
 	UserService userService = new DefaultUserService();
 
-	/*@POST
-	@Consumes({MediaType.APPLICATION_XML,MediaType.APPLICATION_JSON})
-	public Response createUser(User user) {
+
+
+	@RequestMapping(value = "/user", method = RequestMethod.GET,headers = "Accept=application/json")
+	public List<User>   getAllUsers( ) {
+
+
+		return  userService.getAllUsers();
+	}
+
+
+	@RequestMapping(value="/user/create" , method=RequestMethod.POST, headers="Accept=application/json")
+	public String  postUser(User user)
+	{
+		System.out.println("created "+ user.getAge()+" "+user.getId()+" "+user.getName());
 		userService.createUser(user);
-		String result = "User created with " + "ID: "+user.getId();
-		return Response.status(200).entity(result).build();
-
-	}*/
-
-
-	@RequestMapping(value = "/userDetails", method = RequestMethod.GET, produces = "application/xml")
-	public  @ResponseBody Response getAllUsers( ) {
-
-		return  Response.status(200).entity(userService.getAllUsers()).build();
-	}
-	/*
-	@PUT
-	@Consumes(MediaType.APPLICATION_XML)
-	public Response updateUser(User user)
-	{
-		userService.updateUser(user);
-		return Response.status(200).entity("user successfully updated").build();
+		return  user.toString();
 	}
 
-	@DELETE
-	@Consumes(MediaType.APPLICATION_XML)
-	public Response deleteUser(User user)
+	@RequestMapping(value="/user/create" , method=RequestMethod.PUT, headers="Accept=application/json")
+	public User updateUser(User user)
 	{
 
+		System.out.println("update put "+ user.getAge()+" "+user.getId()+" "+user.getName());
+		userService.createUser(user);
+		return user;
+	}
+	@RequestMapping(value="/user/delete" , method=RequestMethod.DELETE, headers="Accept=application/json")
+	public String deleteUser(User user)
+	{
+		System.out.println("dleted  "+ user.getAge()+" "+user.getId()+" "+user.getName());
 		userService.deleteUser(user);
-		return Response.status(200).entity("user deleted").build();
-	}*/
+		return user.toString();
+	}
+
+	@RequestMapping(value="/user/delete/{id}" , method=RequestMethod.DELETE, headers="Accept=application/json")
+	public String deleteUser(User user, @PathVariable("id") int id)
+	{
+		System.out.println("deleted  based on path varibale "+ user.getAge()+" "+user.getId()+" "+user.getName());
+		System.out.println(id);
+		userService.deleteUser(user);
+		return user.toString();
+	}
+
+
 }

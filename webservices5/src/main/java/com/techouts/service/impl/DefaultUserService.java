@@ -3,7 +3,6 @@ package com.techouts.service.impl;
 import java.util.List;
 
 import com.techouts.dao.UserDao;
-import com.techouts.dao.impl.DefaultUserDao;
 import com.techouts.pojo.User;
 import com.techouts.service.UserService;
 
