@@ -1,0 +1,487 @@
+####################STEP1 email process.xml #########################
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<process xmlns="http://www.hybris.de/xsd/processdefinition"
+	start="generateUpdateProfileEmail" name="updateProfileEmailProcess"
+	processClass="com.techouts.hybris.core.model.UpdateProfileProcessModel"
+	onError="error">
+	<action id="generateUpdateProfileEmail" bean="generateUpdateProfileEmail">
+		<transition name="OK" to="sendEmail" />
+		<transition name="NOK" to="error" />
+	</action>
+	<action id="sendEmail" bean="sendEmail">
+		<transition name="OK" to="removeSentEmail" />
+		<transition name="NOK" to="failed" />
+	</action>
+	<action id="removeSentEmail" bean="removeSentEmail">
+		<transition name="OK" to="success" />
+		<transition name="NOK" to="error" />
+	</action>
+	<end id="error" state="ERROR">Something went
+		wrong.
+	</end>
+	<end id="failed" state="FAILED">Could not send
+		customer updateProfile info
+		email.
+	</end>
+	<end id="success" state="SUCCEEDED">Sent customer
+		updateProfile info email.
+	</end>
+</process>
+
+##cofigurations for the process.xml in spring.xml
+
+#1
+<bean id="generateUpdateProfileEmail"
+		class="de.hybris.platform.acceleratorservices.process.email.actions.GenerateEmailAction"
+		scope="tenant" parent="abstractGenerateEmailAction">
+		<property name="frontendTemplateName" value="UpdateProfileEmailTemplate" />
+	</bean>
+#####2
+
+<bean id="updateProfileEmailProcessDefinitionResource"
+		class="de.hybris.platform.processengine.definition.ProcessDefinitionResource">
+		<property name="resource"
+			value="classpath:/merchandisecore/processes/profileupdateeventprocess.xml" />
+	</bean>
+
+###### sTEP2 context class and its configurations ##########################
+
+
+
+
+/**
+ *
+ */
+package de.hybris.merchandise.facades.process.email.context;
+
+import de.hybris.platform.acceleratorservices.model.cms2.pages.EmailPageModel;
+import de.hybris.platform.acceleratorservices.process.email.context.AbstractEmailContext;
+import de.hybris.platform.basecommerce.model.site.BaseSiteModel;
+import de.hybris.platform.core.model.c2l.LanguageModel;
+import de.hybris.platform.core.model.user.CustomerModel;
+
+import com.techouts.hybris.core.model.UpdateProfileProcessModel;
+
+
+/**
+ * @author to-ou-04
+ *
+ */
+public class ProfileUpdateEmailContext extends AbstractEmailContext<UpdateProfileProcessModel>
+{
+
+	public static final String UPDATION_DATE = "updationDate";
+	public static final String CAPTCHA_CODE = "capthaCode";
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see de.hybris.platform.acceleratorservices.process.email.context.AbstractEmailContext#init(de.hybris.platform.
+	 * processengine.model.BusinessProcessModel, de.hybris.platform.acceleratorservices.model.cms2.pages.EmailPageModel)
+	 */
+	@Override
+	public void init(final UpdateProfileProcessModel updateProfileProcessModel, final EmailPageModel emailPageModel)
+	{
+		super.init(updateProfileProcessModel, emailPageModel);               //dynamic attributes are set here
+
+		put(UPDATION_DATE, updateProfileProcessModel.getCreationtime());
+		put(CAPTCHA_CODE, "1a2b3c");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see de.hybris.platform.acceleratorservices.process.email.context.AbstractEmailContext#getSite(de.hybris.platform.
+	 * processengine.model.BusinessProcessModel)
+	 */
+	@Override
+	protected BaseSiteModel getSite(final UpdateProfileProcessModel updateProfileProcessModel)
+	{
+		return updateProfileProcessModel.getSite();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.hybris.platform.acceleratorservices.process.email.context.AbstractEmailContext#getCustomer(de.hybris.platform
+	 * .processengine.model.BusinessProcessModel)
+	 */
+	@Override
+	protected CustomerModel getCustomer(final UpdateProfileProcessModel updateProfileProcessModel)
+	{
+		return updateProfileProcessModel.getCustomer();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.hybris.platform.acceleratorservices.process.email.context.AbstractEmailContext#getEmailLanguage(de.hybris.platform
+	 * .processengine.model.BusinessProcessModel)
+	 */
+
+
+	public String getUpdationDate()
+	{
+		return get(UPDATION_DATE).toString();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.hybris.platform.acceleratorservices.process.email.context.AbstractEmailContext#getEmailLanguage(de.hybris.platform
+	 * .processengine.model.BusinessProcessModel)
+	 */
+	@Override
+	protected LanguageModel getEmailLanguage(final UpdateProfileProcessModel businessProcessModel)
+	{
+		// YTODO Auto-generated method stub
+		return null;
+	}
+
+}
+
+
+##confiuration
+<bean id="profileUpdateEmailContext"
+		class="de.hybris.merchandise.facades.process.email.context.ProfileUpdateEmailContext"
+		parent="abstractEmailContext" scope="prototype"></bean>
+
+
+
+#############step 3.. email configuration in locla.properties##############################
+mail.smtp.server=smtp.gmail.com
+mail.smtp.port=587
+mail.smtp.user=naveen.a@techouts.com
+mail.smtp.password=xxxxxxxxxx
+mail.use.tls=true
+mail.smtp.starttls.enable=true
+#SMPP Configurations
+text.smpp.enabled=true
+
+###############step 4...emailPageTemplate  ##########################
+
+
+$lang=en
+$contentCatalog=hybrisContentCatalog
+$contentCV=catalogVersion(CatalogVersion.catalog(Catalog.id[default=$contentCatalog]),CatalogVersion.version[default=Staged])[default=$contentCatalog:Staged]
+$wideContent=CMSImageComponent,BannerComponent
+# Import config properties into impex macros
+UPDATE GenericItem[processor=de.hybris.platform.commerceservices.impex.impl.ConfigPropertyImportProcessor];pk[unique=true]
+$jarResourceCms=$config-jarResourceCmsValue
+$emailPackageName=$config-emailContextPackageName
+$emailResource=$config-emailResourceValue
+#########
+# Email page Template
+INSERT_UPDATE EmailPageTemplate;$contentCV[unique=true];uid[unique=true];name;active;frontendTemplateName;subject(code);htmlTemplate(code);restrictedPageTypes(code)
+		;    ;UpdateProfileEmailTemplate ;Customer Update Profile Email Template;true ; updateProfileEmail ;marchandise_Email_Update_Profile_Subject;marchandise_Email_Update_Profile_Body;EmailPage
+
+
+#######
+
+UPDATE EmailPageTemplate;$contentCV[unique=true];uid[unique=true]                   ;velocityTemplate[translator=de.hybris.platform.commerceservices.impex.impl.FileLoaderValueTranslator]
+	                    ;                        ;UpdateProfileEmailTemplate ;$jarResourceCms/structure-view/structure_updateProfileEmailTemplate.vm
+
+$jarResourceCms/structure-view/structure_updateProfileEmailTemplate.vm
+
+#####################
+INSERT_UPDATE ContentSlotName ;name[unique=true] ;template(uid,$contentCV)[unique=true][default='UpdateProfileEmailTemplate'];validComponentTypes(code)
+							  ;SiteLogo          ;                                                                           ;CMSImageComponent
+                              ;TopContent        ;                                                                           ;$wideContent
+                              ;BottomContent     ;                                                                           ;$wideContent
+
+########
+
+# Create Content Slots
+INSERT_UPDATE ContentSlot;$contentCV[unique=true];uid[unique=true]    ;name                     ;active
+				         ;                       ;EmailSiteLogoSlot   ;Default Email Site Slot  ;true
+                         ;                       ;EmailTopSlot        ;Default Email Top Slot   ;true
+                         ;                       ;EmailBottomSlot     ;Default Email Bottom Slot;true
+
+####################
+# Bind Content Slots to Email Page Templates
+INSERT_UPDATE ContentSlotForTemplate;$contentCV[unique=true];uid[unique=true]                ;position[unique=true];pageTemplate(uid,$contentCV)[unique=true][default='UpdateProfileEmailTemplate'];contentSlot(uid,$contentCV)[unique=true];allowOverwrite
+                                    ;                       ;SiteLogo-UpdateProfileEmail     ;SiteLogo             ;                                                                               ;EmailSiteLogoSlot					    ;true
+                                    ;					    ;TopContent-UpdateProfileEmail   ;TopContent           ;                                                                               ;EmailTopSlot                            ;true
+                                    ;						;BottomContent-UpdateProfileEmail;BottomContent        ;                                                                               ;EmailBottomSlot                         ;true 
+
+
+###########
+
+                     
+# Email Pages
+INSERT_UPDATE EmailPage;$contentCV[unique=true];uid[unique=true]  ;name                               ;masterTemplate(uid,$contentCV);defaultPage               ;approvalStatus(code)[default='approved'];fromEmail[lang=en];fromName[lang=en]
+                       ;					   ;UpdateProfileEmail;Update Profile Email               ;UpdateProfileEmailTemplate    ;true                      ;                                        ;from@website.com  ;From Website
+# Customer Registration Email Page
+INSERT_UPDATE EmailPage;$contentCV[unique=true];uid[unique=true];name;masterTemplate(uid,$contentCV);defaultPage;approvalStatus(code)[default='approved'];fromEmail[lang=en];fromName[lang=en]
+;;CustomerRegistrationEmail;Customer Registration Email;UpdateProfileEmailTemplate;false;;from@website.com;From Website
+
+
+######
+# Email velocity templates
+INSERT_UPDATE RendererTemplate;code[unique=true]                         ;contextClass;rendererType(code)[default='velocity']
+                              ;marchandise_Email_Update_Profile_Subject  ;de.hybris.merchandise.facades.process.email.context.ProfileUpdateEmailContext
+                              ;marchandise_Email_Update_Profile_Body     ;de.hybris.merchandise.facades.process.email.context.ProfileUpdateEmailContext
+
+
+###########
+
+# Render template for update Profile Email Tempalte
+UPDATE RendererTemplate ;code[unique=true]                       ;description[lang=$lang]      ;templateScript[lang=$lang,translator=de.hybris.platform.commerceservices.impex.impl.FileLoaderValueTranslator]
+                        ;marchandise_Email_Update_Profile_Subject ;update profile Subject       ;$jarResourceCms/structure-view/email-updateProfileSubject.vm
+                        ;marchandise_Email_Update_Profile_Body    ;update profile Email Body    ;$jarResourceCms/structure-view/email-updateProfileBody.vm
+
+
+
+
+#########################STEP5   email-simInventoryBody.vm ########################
+###########5.1
+
+## messageSource=classpath:/merchandisecore/messages/email-verifyEmail_$lang.properties
+#macro(genHtmlLinkStartTag $url)
+<a href="$url"><font color="#666666">
+#end
+#macro(genHtmlLinkEndTag)
+</font></a>
+#end
+#macro(genHtmlLink $url $textColor $bodyContent)
+<a href="$url"><font color="$textColor">$bodyContent</font></a>
+#end
+<html>
+<head>
+</head>
+<body bgcolor="#ffffff"
+<table width="100%" border="0" align="center" cellpadding="0"cellspacing="0" bgcolor="#ffffff">
+<tr>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td align="center" valign="top">
+<table width="610" border="0" align="center"
+cellpadding="0" cellspacing="0" bordercolor="#fff">
+<tr>
+<td align="center" valign="top"
+bgcolor="#FFFFFF">
+<table width="570"
+cellpadding="0" cellspacing="0" border="0" align="center">
+<tr>
+<td
+valign="middle">&nbsp;</td>
+</tr>
+<tr>
+<td align="middle">
+${ctx.cmsSlotContents.SiteLogo}
+<img src="${ctx.themeResourceUrl}/images/header_01.png" alt="" width="229" height="72" border="0" align="right" title="" />
+</td>
+</tr>
+
+<tr>
+<td align="center" align="middle"><a href="${ctx.baseUrl}" style="display:block; margin-
+top:10px;margin-bottom:10px;">${ctx.cmsSlotContents.TopContent}</a></td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td align="left" align="top">
+<p><font color="#666666" size="2" face="Arial, Helvetica, sans-serif">${ctx.messages.complimentaryClosing}</font></p>
+<p><font color="#666666" size="2" face="Arial, Helvetica, sans-serif">${ctx.messages.signature}</font></p>
+<p>${ctx.messages.mobileNumber}</font></p>
+<p>${ctx.name} </p>
+</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td align="center" align="middle">
+<a href="${ctx.baseUrl}" style="display:block; margin-top:10px;margin-bottom:10px;">${ctx.cmsSlotContents.BottomContent}</a>
+</td>
+</tr>
+<tr>
+<td height="30"align="right" valign="middle" bgcolor="#000000">
+<font color="#FFFFFF" size="2" face="Arial, Helvetica, sans-serif"><a href="${ctx.baseUrl}"><font color="#FFFFFF">${ctx.messages.help}</font></a> |
+<a href="${ctx.messages.contactUsPage}"><font color="#FFFFFF">${ctx.messages.contactUs}</font></a> | <a href="${ctx.baseUrl}"><fontcolor="#FFFFFF">${ctx.messages.termsAndCondition}</font></a>
+&nbsp;&nbsp;</font>
+</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr></table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+
+</table>
+</body>
+</html>
+
+############5.2  email-simInventorySubject.vm
+
+${ctx.messages.emailSubject}
+
+##########5.3 structure_updateProfileEmailTemplate.vm
+
+
+<div>
+<table width="50%" cellspacing="0" style="margin:0;padding:0;table-layout:fixed;border:1pxsolid #1E4EBF; ">
+<tbody>
+<tr>
+<td colspan="2" height="125px" width="35%" rowspan="2" class="structureViewSection">
+<cockpit code="SiteLogo" /></td>
+</tr>
+<tr>
+<td colspan="2" height="89px" class="structureViewSection">
+<div>Header</div>
+</td>
+</tr>
+<tr>
+<td height="170px" colspan="6" class="structureViewSection">
+<cockpit code="TopContent" />
+</td>
+</tr>
+<tr>
+<td height="2000px" colspan="6" class="structureViewSection"></td>
+</tr>
+<tr><td height="170px" colspan="6" class="structureViewSection">
+
+
+</td>
+</tr>
+</tbody>
+</table>
+<div style="width:100%; border-top: 2px solid #bbb" class="cmsContentEditor">
+<cockpit code="editor" />
+</div>
+</div>
+
+
+
+##################STEP 6   triggering the email from event listner ####################
+
+
+/**
+ *
+ */
+package de.hybris.merchandise.core.event;
+
+
+
+import de.hybris.merchandise.core.customevent.ProfileUpdateEvent;
+import de.hybris.platform.commerceservices.event.AbstractSiteEventListener;
+import de.hybris.platform.processengine.BusinessProcessService;
+import de.hybris.platform.servicelayer.model.ModelService;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
+import com.techouts.hybris.core.model.UpdateProfileProcessModel;
+
+
+/**
+ * @author to-ou-04
+ *
+ */
+public class ProfileUpdateEventListner extends AbstractSiteEventListener<ProfileUpdateEvent>
+{
+	private static final Logger LOG = Logger.getLogger(ProfileUpdateEventListner.class);
+	@Resource
+	private ModelService modelService;
+	@Resource
+	private BusinessProcessService businessProcessService;
+
+	@Override
+	protected void onSiteEvent(final ProfileUpdateEvent updateProfileEvent)
+	{
+
+
+		LOG.info("Now I am in UpdateProfileEventListener ################ hI DUDE"); 
+		final UpdateProfileProcessModel updateProfileProcessModel = (UpdateProfileProcessModel) getBusinessProcessService()       //creatre the process model
+				.createProcess("customerProcess-" + updateProfileEvent.getCustomer().getUid() + "-" + System.currentTimeMillis(),
+						"updateProfileEmailProcess");
+		updateProfileProcessModel.setSite(updateProfileEvent.getSite());
+		updateProfileProcessModel.setCustomer(updateProfileEvent.getCustomer());
+		updateProfileProcessModel.setStore(updateProfileEvent.getBaseStore());
+		updateProfileProcessModel.setCurrentDate(updateProfileEvent.getCurrentDate());
+		getModelService().save(updateProfileProcessModel);
+		getBusinessProcessService().startProcess(updateProfileProcessModel);    //start the process model
+		LOG.info("Now I am in UpdateProfileEventListener onSiteEvent () methodEnd");
+	}
+
+	/**
+	 * @return the modelService
+	 */
+	protected ModelService getModelService()
+	{
+		return modelService;
+	}
+
+	/**
+	 * @param modelService
+	 *
+	 *           the modelService to set
+	 */
+	@Required
+	public void setModelService(final ModelService modelService)
+	{
+		this.modelService = modelService;
+	}
+
+	/**
+	 * @return
+	 */
+	protected BusinessProcessService getBusinessProcessService()
+	{
+		return businessProcessService;
+	}
+
+	@Required
+	public void setBusinessProcessService(final BusinessProcessService businessProcessService)
+	{
+		this.businessProcessService = businessProcessService;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 *
+	 * de.hybris.platform.commerceservices.event.AbstractSiteEventListener#shouldHandleEvent(d
+	 * e.hybris.platform.servicelayer .event.events.AbstractEvent)
+	 */
+	@Override
+	protected boolean shouldHandleEvent(final ProfileUpdateEvent updateP)
+	{
+		LOG.info("Now I am in UpdateProfileEventListener shouldHandleEvent ()method");
+		/*
+		 * final BaseSiteModel site = updateP.getSite();
+		 * ServicesUtil.validateParameterNotNullStandardMessage("event.site", site);
+		 */
+		LOG.info("Now I am in UpdateProfileEventListener shouldHandleEvent ()method End");
+		return true;
+	}
+}
+
+
+
+####################
+
+
+
+
+
+
+
+
+
