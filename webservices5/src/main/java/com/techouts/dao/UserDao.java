@@ -46,4 +46,11 @@ public class UserDao {
 
 	}
 
+	public void createusers(List<User> users) {
+		for (User user : users) {
+			usersMap.put(user.getId(), user);
+		}
+
+	}
+
 }

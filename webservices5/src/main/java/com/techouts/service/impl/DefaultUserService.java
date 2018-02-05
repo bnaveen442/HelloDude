@@ -40,6 +40,11 @@ public class DefaultUserService  implements UserService{
 		
 	}
 
+	public void createUser(List<User> users) {
+	userDao.createusers(users);
+		
+	}
+
 }  
 
 
