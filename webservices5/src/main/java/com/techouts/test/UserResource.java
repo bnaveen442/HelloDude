@@ -24,7 +24,7 @@ public class UserResource{
 	@RequestMapping(value = "/user", method = RequestMethod.GET,headers = "Accept=application/json")
 	public List<User>   getAllUsers( ) {
 
-
+  	System.out.println("getting all the users ");
 		return  userService.getAllUsers();
 	}
 
